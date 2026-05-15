@@ -8,36 +8,31 @@ import java.util.List;
 
 public class SystemDAO {
 
-    // CREATE AN ORDER (Requires all business fields)
     public boolean placeOrder(int userId, int gallons, String orderType, double amount, String paymentMethod) {
         String sql = "INSERT INTO orders (user_id, gallons, order_type, amount, payment_method, status, order_date) " +
                 "VALUES (?, ?, ?, ?, ?, 'Pending', datetime('now', 'localtime'))";
+        Connection conn = DatabaseManager.getInstance().getConnection(); // Moved outside
 
-        try (Connection conn = DatabaseManager.getInstance().getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, userId);
             pstmt.setInt(2, gallons);
             pstmt.setString(3, orderType);
             pstmt.setDouble(4, amount);
             pstmt.setString(5, paymentMethod);
             return pstmt.executeUpdate() > 0;
-
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
         }
     }
 
-    // GET ALL CUSTOMERS
     public List<Customer> getAllCustomers() {
         List<Customer> list = new ArrayList<>();
         String sql = "SELECT id, full_name, street_address, phone_number FROM users WHERE role = 'CUSTOMER'";
+        Connection conn = DatabaseManager.getInstance().getConnection(); // Moved outside
 
-        try (Connection conn = DatabaseManager.getInstance().getConnection();
-             Statement stmt = conn.createStatement();
+        try (Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
-
             while (rs.next()) {
                 list.add(new Customer(
                         rs.getInt("id"),
@@ -52,45 +47,35 @@ public class SystemDAO {
         return list;
     }
 
-    // UPDATE ORDER STATUS
     public boolean updateOrderStatus(int orderId, String newStatus) {
         String sql = "UPDATE orders SET status = ? WHERE id = ?";
+        Connection conn = DatabaseManager.getInstance().getConnection(); // Moved outside
 
-        try (Connection conn = DatabaseManager.getInstance().getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, newStatus);
             pstmt.setInt(2, orderId);
             return pstmt.executeUpdate() > 0;
-
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
         }
     }
 
-    // GET ORDERS BY USER (For Customer Dashboard)
     public List<Order> getOrdersByUser(int userId) {
         List<Order> list = new ArrayList<>();
         String sql = "SELECT * FROM orders WHERE user_id = ? ORDER BY order_date DESC";
+        Connection conn = DatabaseManager.getInstance().getConnection(); // Moved outside
 
-        try (Connection conn = DatabaseManager.getInstance().getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, userId);
-            ResultSet rs = pstmt.executeQuery();
-
-            while (rs.next()) {
-                list.add(new Order(
-                        rs.getInt("id"),
-                        rs.getInt("user_id"),
-                        rs.getInt("gallons"),
-                        rs.getString("order_type"),
-                        rs.getDouble("amount"),
-                        rs.getString("payment_method"),
-                        rs.getString("status"),
-                        rs.getString("order_date")
-                ));
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    list.add(new Order(
+                            rs.getInt("id"), rs.getInt("user_id"), rs.getInt("gallons"),
+                            rs.getString("order_type"), rs.getDouble("amount"),
+                            rs.getString("payment_method"), rs.getString("status"), rs.getString("order_date")
+                    ));
+                }
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -98,25 +83,18 @@ public class SystemDAO {
         return list;
     }
 
-    // GET ALL ORDERS (For Admin Dashboard)
     public List<Order> getAllOrders() {
         List<Order> list = new ArrayList<>();
         String sql = "SELECT * FROM orders ORDER BY order_date DESC";
+        Connection conn = DatabaseManager.getInstance().getConnection(); // Moved outside
 
-        try (Connection conn = DatabaseManager.getInstance().getConnection();
-             Statement stmt = conn.createStatement();
+        try (Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
-
             while (rs.next()) {
                 list.add(new Order(
-                        rs.getInt("id"),
-                        rs.getInt("user_id"),
-                        rs.getInt("gallons"),
-                        rs.getString("order_type"),
-                        rs.getDouble("amount"),
-                        rs.getString("payment_method"),
-                        rs.getString("status"),
-                        rs.getString("order_date")
+                        rs.getInt("id"), rs.getInt("user_id"), rs.getInt("gallons"),
+                        rs.getString("order_type"), rs.getDouble("amount"),
+                        rs.getString("payment_method"), rs.getString("status"), rs.getString("order_date")
                 ));
             }
         } catch (SQLException e) {
@@ -125,14 +103,12 @@ public class SystemDAO {
         return list;
     }
 
-    // GET TOTAL REVENUE
     public double getTotalRevenue() {
         String sql = "SELECT SUM(amount) FROM orders WHERE status = 'Paid'";
+        Connection conn = DatabaseManager.getInstance().getConnection(); // Moved outside
 
-        try (Connection conn = DatabaseManager.getInstance().getConnection();
-             Statement stmt = conn.createStatement();
+        try (Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
-
             if (rs.next()) {
                 return rs.getDouble(1);
             }
