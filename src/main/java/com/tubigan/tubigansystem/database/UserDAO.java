@@ -47,4 +47,25 @@ public class UserDAO {
             return false;
         }
     }
+
+    // PROFILE UPDATE LOGIC (New - Completes user profile for delivery)
+    public boolean updateProfile(int userId, String phone, String street, String barangay, String city) {
+        String sql = "UPDATE users SET phone_number = ?, street_address = ?, barangay = ?, city = ? WHERE id = ?";
+
+        try (Connection conn = DatabaseManager.getInstance().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, phone);
+            pstmt.setString(2, street);
+            pstmt.setString(3, barangay);
+            pstmt.setString(4, city);
+            pstmt.setInt(5, userId);
+
+            return pstmt.executeUpdate() > 0;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
 }
